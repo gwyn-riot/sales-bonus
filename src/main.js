@@ -105,11 +105,13 @@ function analyzeSalesData(data, options) {
             const revenue = calculateRevenue(item, product);
             sellersStats[sellerId].revenue += revenue;
             
-            // Рассчитываем прибыль и округляем на каждом шаге
+            // Рассчитываем себестоимость и округляем
             const cost = product.purchase_price * item.quantity;
-            const profit = revenue - cost;
-            // Округляем каждую операцию прибыли
-            const roundedProfit = Number(profit.toFixed(2));
+            const roundedCost = Number(cost.toFixed(2)); // Округляем себестоимость!
+            
+            // Рассчитываем прибыль
+            const profit = revenue - roundedCost;
+            const roundedProfit = Number(profit.toFixed(2)); // Округляем прибыль
             sellersStats[sellerId].profit += roundedProfit;
             
             // Учет проданных товаров
