@@ -5,7 +5,7 @@ function calculateSimpleRevenue(purchase, _product) {
     const fullPrice = sale_price * quantity;
     const revenue = fullPrice * (1 - discountDecimal);
     
-    return Math.round(revenue * 100) / 100;
+    return Number(revenue.toFixed(2));
 }
 
 function calculateBonusByProfit(index, total, seller) {
@@ -28,7 +28,7 @@ function calculateBonusByProfit(index, total, seller) {
     }
     
     const bonus = profit * bonusPercentage;
-    return Math.round(bonus * 100) / 100;
+    return Number(bonus.toFixed(2));
 }
 
 function analyzeSalesData(data, options) {
@@ -98,8 +98,7 @@ function analyzeSalesData(data, options) {
             
             const cost = product.purchase_price * item.quantity;
             const profit = revenue - cost;
-            const roundedProfit = Math.round(profit * 100) / 100;
-            sellersStats[sellerId].profit += roundedProfit;
+            sellersStats[sellerId].profit += profit;
             
             const sku = item.sku;
             if (!sellersStats[sellerId].products_sold[sku]) {
@@ -118,8 +117,8 @@ function analyzeSalesData(data, options) {
     const totalSellers = sellersArray.length;
     
     sellersArray.forEach((seller, index) => {
-        seller.revenue = Math.round(seller.revenue * 100) / 100;
-        seller.profit = Math.round(seller.profit * 100) / 100;
+        seller.revenue = Number(seller.revenue.toFixed(2));
+        seller.profit = Number(seller.profit.toFixed(2));
         
         seller.bonus = calculateBonus(index, totalSellers, seller);
     });
@@ -142,4 +141,3 @@ function analyzeSalesData(data, options) {
     
     return result;
 }
-/**test */
