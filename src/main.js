@@ -1,11 +1,40 @@
-/**
- * Функция для анализа данных продаж
- * @param data
- * @param options
- * @returns {{revenue, top_products, bonus, name, sales_count, profit, seller_id}[]}
- */
+function calculateSimpleRevenue(purchase, _product) {
+    const { discount, sale_price, quantity } = purchase;
+    
+    const discountDecimal = discount / 100;
+    const fullPrice = sale_price * quantity;
+    const revenue = fullPrice * (1 - discountDecimal);
+    
+    // Используем toFixed для точного округления до 2 знаков
+    return Number(revenue.toFixed(2));
+}
+
+function calculateBonusByProfit(index, total, seller) {
+    const { profit } = seller;
+    
+    if (!profit || profit <= 0) {
+        return 0;
+    }
+    
+    let bonusPercentage;
+    
+    if (index === 0) {
+        bonusPercentage = 0.15;
+    } else if (index === 1 || index === 2) {
+        bonusPercentage = 0.10;
+    } else if (index === total - 1) {
+        bonusPercentage = 0;
+    } else {
+        bonusPercentage = 0.05;
+    }
+    
+    const bonus = profit * bonusPercentage;
+    // Используем toFixed для точного округления
+    return Number(bonus.toFixed(2));
+}
+
 function analyzeSalesData(data, options) {
-    // @TODO: Проверка входных данных
+    // Проверка входных данных
     if (!data
         || !Array.isArray(data.sellers)
         || !Array.isArray(data.products)
@@ -17,7 +46,7 @@ function analyzeSalesData(data, options) {
         throw new Error('Некорректные входные данные');
     }
     
-    // @TODO: Проверка наличия опций
+    // Проверка наличия опций
     if (!options || typeof options !== 'object') {
         throw new Error('Не переданы опции');
     }
@@ -32,20 +61,14 @@ function analyzeSalesData(data, options) {
         throw new Error('calculateRevenue и calculateBonus должны быть функциями');
     }
     
-    // @TODO: Подготовка промежуточных данных для сбора статистики
+    // Подготовка данных
     const sellersStats = {};
+    const sellersMap = {};
+    const productsMap = {};
     
-    // @TODO: Индексация продавцов и товаров для быстрого доступа
-    const sellersMap = Object.fromEntries(
-        data.sellers.map(seller => [seller.id, seller])
-    );
-    
-    const productsMap = Object.fromEntries(
-        data.products.map(product => [product.sku, product])
-    );
-    
-    // Инициализируем статистику для каждого продавца
+    // Индексация продавцов
     data.sellers.forEach(seller => {
+        sellersMap[seller.id] = seller;
         sellersStats[seller.id] = {
             id: seller.id,
             name: `${seller.first_name} ${seller.last_name}`,
@@ -56,19 +79,21 @@ function analyzeSalesData(data, options) {
         };
     });
     
-    // @TODO: Расчет выручки и прибыли для каждого продавца
+    // Индексация товаров
+    data.products.forEach(product => {
+        productsMap[product.sku] = product;
+    });
+    
+    // Расчет выручки и прибыли
     data.purchase_records.forEach(purchase => {
         const sellerId = purchase.seller_id;
         
-        // Проверяем, существует ли продавец
         if (!sellersStats[sellerId]) {
             return;
         }
         
-        // Увеличиваем счетчик продаж
         sellersStats[sellerId].sales_count += 1;
         
-        // Обрабатываем каждый товар в чеке
         purchase.items.forEach(item => {
             const product = productsMap[item.sku];
             
@@ -76,18 +101,18 @@ function analyzeSalesData(data, options) {
                 return;
             }
             
-            // Рассчитываем выручку от этого товара
-            const revenue = Math.round(calculateRevenue(item, product) * 100) / 100;
+            // Рассчитываем выручку (уже округленную с помощью toFixed)
+            const revenue = calculateRevenue(item, product);
             sellersStats[sellerId].revenue += revenue;
             
-            // Рассчитываем себестоимость
-            const cost = Math.round(product.purchase_price * item.quantity * 100) / 100;
+            // Рассчитываем прибыль и округляем на каждом шаге
+            const cost = product.purchase_price * item.quantity;
+            const profit = revenue - cost;
+            // Округляем каждую операцию прибыли
+            const roundedProfit = Number(profit.toFixed(2));
+            sellersStats[sellerId].profit += roundedProfit;
             
-            // Рассчитываем прибыль
-            const profit = Math.round((revenue - cost) * 100) / 100;
-            sellersStats[sellerId].profit += profit;
-            
-            // Учитываем проданный товар для статистики
+            // Учет проданных товаров
             const sku = item.sku;
             if (!sellersStats[sellerId].products_sold[sku]) {
                 sellersStats[sellerId].products_sold[sku] = {
@@ -99,26 +124,24 @@ function analyzeSalesData(data, options) {
         });
     });
     
-    // @TODO: Сортировка продавцов по прибыли
+    // Сортировка по прибыли
     const sellersArray = Object.values(sellersStats);
     sellersArray.sort((a, b) => b.profit - a.profit);
     
-    // @TODO: Назначение премий на основе ранжирования
+    // Расчет бонусов
     const totalSellers = sellersArray.length;
     
     sellersArray.forEach((seller, index) => {
-        // Округляем значения перед расчетом бонуса
-        seller.revenue = Math.round(seller.revenue * 100) / 100;
-        seller.profit = Math.round(seller.profit * 100) / 100;
+        // Округляем итоговые значения (на всякий случай)
+        seller.revenue = Number(seller.revenue.toFixed(2));
+        seller.profit = Number(seller.profit.toFixed(2));
         
-        // Рассчитываем бонус для каждого продавца
+        // Рассчитываем бонус
         seller.bonus = calculateBonus(index, totalSellers, seller);
-        seller.bonus = Math.round(seller.bonus * 100) / 100;
     });
     
-    // @TODO: Подготовка итоговой коллекции с нужными полями
+    // Подготовка итоговой коллекции
     const result = sellersArray.map(seller => {
-        // Формируем топ-10 товаров
         const topProducts = Object.values(seller.products_sold)
             .sort((a, b) => b.quantity - a.quantity)
             .slice(0, 10);
