@@ -5,7 +5,7 @@ function calculateSimpleRevenue(purchase, _product) {
     const fullPrice = sale_price * quantity;
     const revenue = fullPrice * (1 - discountDecimal);
     
-    // ОКРУГЛЯЕМ выручку на каждом шаге!
+    // Округляем выручку
     return Math.round(revenue * 100) / 100;
 }
 
@@ -100,14 +100,15 @@ function analyzeSalesData(data, options) {
                 return;
             }
             
-            // Рассчитываем выручку (уже округленную в calculateRevenue)
+            // Рассчитываем выручку (уже округленную)
             const revenue = calculateRevenue(item, product);
             sellersStats[sellerId].revenue += revenue;
             
-            // Рассчитываем прибыль (НЕ округляем на каждом шаге!)
+            // Рассчитываем прибыль и ОКРУГЛЯЕМ на каждом шаге!
             const cost = product.purchase_price * item.quantity;
             const profit = revenue - cost;
-            sellersStats[sellerId].profit += profit;
+            const roundedProfit = Math.round(profit * 100) / 100; // Округляем!
+            sellersStats[sellerId].profit += roundedProfit;
             
             // Учет проданных товаров
             const sku = item.sku;
@@ -129,7 +130,7 @@ function analyzeSalesData(data, options) {
     const totalSellers = sellersArray.length;
     
     sellersArray.forEach((seller, index) => {
-        // Округляем итоговые значения
+        // Округляем итоговые значения (на всякий случай)
         seller.revenue = Math.round(seller.revenue * 100) / 100;
         seller.profit = Math.round(seller.profit * 100) / 100;
         
