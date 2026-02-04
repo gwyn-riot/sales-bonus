@@ -5,8 +5,8 @@ function calculateSimpleRevenue(purchase, _product) {
     const fullPrice = sale_price * quantity;
     const revenue = fullPrice * (1 - discountDecimal);
     
-    // Округляем выручку
-    return Math.round(revenue * 100) / 100;
+    // Используем toFixed для точного округления до 2 знаков
+    return Number(revenue.toFixed(2));
 }
 
 function calculateBonusByProfit(index, total, seller) {
@@ -29,7 +29,8 @@ function calculateBonusByProfit(index, total, seller) {
     }
     
     const bonus = profit * bonusPercentage;
-    return Math.round(bonus * 100) / 100;
+    // Используем toFixed для точного округления
+    return Number(bonus.toFixed(2));
 }
 
 function analyzeSalesData(data, options) {
@@ -100,14 +101,15 @@ function analyzeSalesData(data, options) {
                 return;
             }
             
-            // Рассчитываем выручку (уже округленную)
+            // Рассчитываем выручку (уже округленную с помощью toFixed)
             const revenue = calculateRevenue(item, product);
             sellersStats[sellerId].revenue += revenue;
             
-            // Рассчитываем прибыль и ОКРУГЛЯЕМ на каждом шаге!
+            // Рассчитываем прибыль и округляем на каждом шаге
             const cost = product.purchase_price * item.quantity;
             const profit = revenue - cost;
-            const roundedProfit = Math.round(profit * 100) / 100; // Округляем!
+            // Округляем каждую операцию прибыли
+            const roundedProfit = Number(profit.toFixed(2));
             sellersStats[sellerId].profit += roundedProfit;
             
             // Учет проданных товаров
@@ -131,8 +133,8 @@ function analyzeSalesData(data, options) {
     
     sellersArray.forEach((seller, index) => {
         // Округляем итоговые значения (на всякий случай)
-        seller.revenue = Math.round(seller.revenue * 100) / 100;
-        seller.profit = Math.round(seller.profit * 100) / 100;
+        seller.revenue = Number(seller.revenue.toFixed(2));
+        seller.profit = Number(seller.profit.toFixed(2));
         
         // Рассчитываем бонус
         seller.bonus = calculateBonus(index, totalSellers, seller);
